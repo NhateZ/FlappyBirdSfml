@@ -1,7 +1,12 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
-auto window = sf::RenderWindow(sf::VideoMode({800u, 600u}), "CMake SFML Project");
+auto window = sf::RenderWindow(sf::VideoMode({800u, 600u}), "Flying sunset bird");
+
+namespace windowSize {
+    float x = 800;
+    float y = 600;
+}
 
 class Bird {
 private:
@@ -16,22 +21,39 @@ private:
 public:
     static sf::Sprite bird;
     Bird() {
+        texture.setSmooth(true);
+
         scale = 2.f;
         bird.setScale({scale,scale});
 
         const float birdRadius = 16;
         const auto [winX, winY] = window.getSize();
         bird.setPosition({1.f * winX / 2 - scale * 16, 1.f * winY / 2 - scale * 16});
-        std::cout << bird.getPosition().x << ' ' << bird.getTexture().getSize().y;
+        std::cout << bird.getPosition().x << ' ' << bird.getPosition().y << '\n';
 
     }
+    static void updateScale() {
+        const float birdRadius = 16;
+
+        const auto [winX, winY] = window.getSize();
+        auto [birdX,birdY] = bird.getPosition();
+
+        scale *= winX/windowSize::x;
+
+        windowSize::x = winX;
+        windowSize::y = winY;
+
+
+        bird.setPosition({1.f * winX / 2 -  16 / scale, 50});
+        std::cout << winX << ' ' << winY << '\n';
+    }
     static void jump() {
-        acceleration = 10;
-        velocity = 100;
+        acceleration = 9.f;
+        velocity = 50.f;
     }
     static void applyPhysics(const float dt) {
 
-        std::cout << "acceleration: " << acceleration << '\n';
+        //std::cout << "acceleration: " << acceleration << '\n';
         velocity += acceleration;
         if (acceleration > -8.75f) {
             acceleration -= friction;
@@ -61,11 +83,14 @@ public:
 
     static void start() {
         status = Run;
-        clock.reset();
     }
 
     static void update() {
         const float delta = clock.restart().asSeconds();
+
+        if (status != Run) {
+            return;
+        }
 
         Bird::applyPhysics(delta);
     }
@@ -78,6 +103,10 @@ int main()
 {
     Bird();
     window.setFramerateLimit(144);
+    sf::Texture backgroundTexture("background.png");
+    backgroundTexture.setSmooth(true);
+    sf::Sprite background(backgroundTexture,{{0,0},{1920u,1080u}});
+    background.setScale({window.getSize().x/1920.f,window.getSize().y/1080.f});
 
     while (window.isOpen())
     {
@@ -90,7 +119,9 @@ int main()
                 Game::status = Game::Run;
                 switch (key->scancode) {
                     case sf::Keyboard::Scancode::Space:
-                        Bird::jump();
+                        if (Game::status == Game::Run) {
+                            Bird::jump();
+                        }
                         break;
                     default:
                         break;
@@ -98,16 +129,20 @@ int main()
             } else if(const auto* click = event->getIf<sf::Event::MouseButtonPressed>()) {
                 Game::status = Game::Run;
                 if (click->button == sf::Mouse::Button::Left || click->button == sf::Mouse::Button::Right) {
-                    Bird::jump();
+                    if (Game::status == Game::Run) {
+                        Bird::jump();
+                    }
                 }
+            } else if (event->is<sf::Event::Resized>()) {
+                Bird::updateScale();
             }
         }
 
         window.clear();
 
-        if (Game::status == Game::Run) {
-            Game::update();
-        }
+        window.draw(background);
+
+        Game::update();
 
         window.draw(Bird::bird);
 
