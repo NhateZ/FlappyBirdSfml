@@ -15,7 +15,8 @@ namespace sounds {
 }
 
 
-void playSound(sf::Sound sound) {
+void playSound(sf::Sound& sound) {
+    std::cout << "volume: " << sound.getVolume() << '\n';
     sound.play();
 }
 
@@ -125,6 +126,7 @@ int8_t Game::status = Game::Stop;
 int main()
 {
     Bird();
+    window.setKeyRepeatEnabled(false);
     window.setFramerateLimit(144);
     sf::Texture backgroundTexture("background.png");
     backgroundTexture.setSmooth(true);
@@ -167,13 +169,11 @@ int main()
             } else if (event->is<sf::Event::Resized>()) {
                 Bird::updateScale();
                 background.setScale({window.getSize().x/1920.f,window.getSize().y/1080.f});
-                window.create(sf::VideoMode({window.getSize().x, window.getSize().y}),"Flying sunset bird");
-                window.setFramerateLimit(144);
+                window.setView(sf::View(sf::FloatRect({0.f, 0.f}, {windowSize::x,windowSize::y})));
             }
         }
 
         window.clear();
-
         window.draw(background);
 
         Game::update();
