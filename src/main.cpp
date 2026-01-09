@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 
 auto window = sf::RenderWindow(sf::VideoMode({800u, 600u}), "Flying sunset bird");
@@ -6,6 +7,16 @@ auto window = sf::RenderWindow(sf::VideoMode({800u, 600u}), "Flying sunset bird"
 namespace windowSize {
     float x = 800;
     float y = 600;
+}
+
+namespace sounds {
+    sf::SoundBuffer jumpBuffer("jump.wav");
+    sf::Sound jump(jumpBuffer);
+}
+
+
+void playSound(sf::Sound sound) {
+    sound.play();
 }
 
 class Bird {
@@ -44,16 +55,17 @@ public:
         windowSize::y = winY;
 
 
-        bird.setPosition({1.f * winX / 2 -  16 / scale, 50});
-        std::cout << winX << ' ' << winY << '\n';
+        bird.setPosition({1.f * winX / 2 - scale * 16, 50});
+        std::cout << bird.getPosition().x << ' ' << bird.getPosition().y << '\n';
     }
     static void jump() {
         acceleration = 9.f;
         velocity = 50.f;
+        playSound(sounds::jump);
     }
-    static void applyPhysics(const float dt) {
+    static int8_t applyPhysics(const float dt) {
 
-        //std::cout << "acceleration: " << acceleration << '\n';
+        std::cout << "acceleration: " << acceleration << '\n';
         velocity += acceleration;
         if (acceleration > -8.75f) {
             acceleration -= friction;
@@ -61,7 +73,11 @@ public:
 
 
         const auto [birdX, birdY] = bird.getPosition();
-        bird.setPosition({birdX, birdY - velocity * dt});
+
+        //return -1;
+
+        bird.setPosition({birdX, (birdY - velocity * dt)});
+        return 0;
     }
 };
 sf::Texture Bird::texture("berd.png",false, sf::IntRect({0,0}, {16,16}));
@@ -85,19 +101,26 @@ public:
         status = Run;
     }
 
+    static void over() {
+        ;
+    }
+
     static void update() {
         const float delta = clock.restart().asSeconds();
-
         if (status != Run) {
             return;
         }
 
-        Bird::applyPhysics(delta);
+        // returnCode:
+        // -1 -> game over
+        // 0  -> ok
+        auto returnCode = Bird::applyPhysics(delta);
     }
 
 };
 sf::Clock Game::clock;
 int8_t Game::status = Game::Stop;
+
 
 int main()
 {
@@ -107,6 +130,8 @@ int main()
     backgroundTexture.setSmooth(true);
     sf::Sprite background(backgroundTexture,{{0,0},{1920u,1080u}});
     background.setScale({window.getSize().x/1920.f,window.getSize().y/1080.f});
+
+
 
     while (window.isOpen())
     {
@@ -121,6 +146,9 @@ int main()
                     case sf::Keyboard::Scancode::Space:
                         if (Game::status == Game::Run) {
                             Bird::jump();
+                        } else {
+                            Game::status = Game::Run;
+                            Bird::jump();
                         }
                         break;
                     default:
@@ -131,10 +159,16 @@ int main()
                 if (click->button == sf::Mouse::Button::Left || click->button == sf::Mouse::Button::Right) {
                     if (Game::status == Game::Run) {
                         Bird::jump();
+                    } else {
+                        Game::status = Game::Run;
+                        Bird::jump();
                     }
                 }
             } else if (event->is<sf::Event::Resized>()) {
                 Bird::updateScale();
+                background.setScale({window.getSize().x/1920.f,window.getSize().y/1080.f});
+                window.create(sf::VideoMode({window.getSize().x, window.getSize().y}),"Flying sunset bird");
+                window.setFramerateLimit(144);
             }
         }
 

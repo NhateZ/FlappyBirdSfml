@@ -15,6 +15,7 @@ FetchContent_MakeAvailable(SFML)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources/berd.png" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bin")
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources/background.png" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bin")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources/jump.wav" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -26,3 +27,4 @@ endif()
 
 target_compile_features(main PRIVATE cxx_std_20)
 target_link_libraries(main PRIVATE SFML::Graphics)
+target_link_libraries(main PRIVATE SFML::Audio)
